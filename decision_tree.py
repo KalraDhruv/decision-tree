@@ -35,6 +35,44 @@ def mutualInformation(label, feature, train_input):
 
     return i_y_x
 
+def train(train_input):
+    root = tree_recurse(train_input)
+
+def tree_recurse(train_input):
+    q = Node()
+    i = 0
+    if i == 10:
+        i= 1
+
+    else:
+        split = mutualInfoSplitter(train_input)
+        print(f"The column selected for spliting is: {split}")
+
+def mutualInfoSplitter(train_input):
+    input = pd.read_csv(train_input, sep='\t')
+    labels = input.iloc[:, input.shape[1] - 1]
+    input = input.drop(input.columns[input.shape[1] - 1], axis=1)
+    list_mutual_info = []
+
+    for column in input.columns:
+        list_mutual_info.append(mutualInformation(labels, input[column].values, train_input))
+
+    print(list_mutual_info)
+    i_y_x_index = -1
+    index_count = 0
+    i_y_x = 0
+
+    for new_i in list_mutual_info:
+
+       if new_i > i_y_x and new_i != 0:
+            i_y_x = new_i
+            i_y_x_index = index_count
+       index_count += 1
+
+    if i_y_x_index == -1:
+        return 'none'
+    else:
+        return input.columns[i_y_x_index]
 
 
 
@@ -57,35 +95,7 @@ if __name__ == '__main__':
                         help='path of the output .txt file to which the printed tree should be written')
     args = parser.parse_args()
     '''
-    input = pd.read_csv('dataset/small_train.tsv', sep='\t')
-    print(input.head())
-    labels = input.iloc[:, input.shape[1] - 1]
-    input = input.drop(input.columns[input.shape[1] - 1],axis=1)
-    list_mutual_info = []
-
-    print(labels)
-    for column in input.columns:
-        print(input[column].values)
-        list_mutual_info.append(mutualInformation(labels, input[column].values,'dataset/small_train.tsv'))
-    print(list_mutual_info)
-
-def train(train_input):
-    root = tree_recurse(train_input)
-
-def tree_recurse(train_input):
-    q = Node()
-    i = 0
-    if i == 10:
-        i= 1
-
-    else:
-        input = pd.read_csv(train_input, sep='\t')
-        labels = input.iloc[:, input.shape[1] - 1]
-        input = input.drop(input.columns[input.shape[1] - 1],axis=1)
-        list_mutual_info = []
-        for column in input.columns:
-           list_mutual_info.append(mutualInformation(labels,column,train_input))
-        print(list_mutual_info)
-
+split = mutualInfoSplitter('dataset/small_train.tsv')
+print(f"The column selected for spliting is: {split}")
 
 

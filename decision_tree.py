@@ -40,10 +40,8 @@ def mutualInformation(label, feature, train_input):
 
 
 if __name__ == '__main__':
-    value = mutualInformation([1,0,0,1,1,0,0,1],[0,0,1,0,0,1,1,0],'dataset/small_train.tsv')
-    print(f"The entropy is: {value}")
-
     '''
+
     parser = argparse.ArgumentParser()
     parser.add_argument("train_input", type=str, help='path to training input .tsv file')
     parser.add_argument("test_input", type=str, help='path to the test input .tsv file')
@@ -59,9 +57,35 @@ if __name__ == '__main__':
                         help='path of the output .txt file to which the printed tree should be written')
     args = parser.parse_args()
     '''
+    input = pd.read_csv('dataset/small_train.tsv', sep='\t')
+    print(input.head())
+    labels = input.iloc[:, input.shape[1] - 1]
+    input = input.drop(input.columns[input.shape[1] - 1],axis=1)
+    list_mutual_info = []
 
+    print(labels)
+    for column in input.columns:
+        print(input[column].values)
+        list_mutual_info.append(mutualInformation(labels, input[column].values,'dataset/small_train.tsv'))
+    print(list_mutual_info)
 
+def train(train_input):
+    root = tree_recurse(train_input)
 
+def tree_recurse(train_input):
+    q = Node()
+    i = 0
+    if i == 10:
+        i= 1
+
+    else:
+        input = pd.read_csv(train_input, sep='\t')
+        labels = input.iloc[:, input.shape[1] - 1]
+        input = input.drop(input.columns[input.shape[1] - 1],axis=1)
+        list_mutual_info = []
+        for column in input.columns:
+           list_mutual_info.append(mutualInformation(labels,column,train_input))
+        print(list_mutual_info)
 
 
 

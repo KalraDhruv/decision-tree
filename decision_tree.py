@@ -9,13 +9,13 @@ class Node:
         self.attr = None
         self.vote = None
 
-def mutualInformation(label, feature, train_input):
+def mutualInformation(feature, label):
     # Using Zip to combine the lists element wise
     combined_list = Counter(zip(feature, label))
     # Obtaining the probability for each unique pair of x & y
     unique_label_count = defaultdict(Counter)
     # Initializing variable for storing mutualInformation
-    i_y_x = inspection(train_input)
+    i_y_x = inspection_common(label)
     # Total count of all features/labels
     total_count_data = len(feature)
 
@@ -23,11 +23,10 @@ def mutualInformation(label, feature, train_input):
         unique_label_count[x_val][y_val] = count
 
     for x_val, counter in unique_label_count.items():
-
         countLabel = 0
-        probabilities = [];
+        probabilities = []
         for x_val, y_val in counter.items():
-            countLabel+=y_val
+            countLabel += y_val
         for x_val, y_val in counter.items():
             probabilities.append(y_val/countLabel)
         for probability in probabilities:
@@ -36,26 +35,56 @@ def mutualInformation(label, feature, train_input):
     return i_y_x
 
 def train(train_input):
-    root = tree_recurse(train_input)
+    input = pd.read_csv(train_input, sep='\t')
+    label = input.iloc[:, input.shape[1] - 1]
+    feature = input.drop(input.columns[input.shape[1] - 1], axis=1)
+    root = tree_recurse(feature, label)
+    return root
 
-def tree_recurse(train_input):
-    q = Node()
-    i = 0
-    if i == 10:
-        i= 1
+def tree_recurse(feature, label):
+    # Root node for the tree
+    root = Node()
+    split = mutualInfoSplitter(feature, label)
+
+    if split == None:
+        majority_vote = 'label'
+        # This works fine
+        # Return the majority vote classifier for the leaf.
+        return majority_vote
 
     else:
-        split = mutualInfoSplitter(train_input)
-        print(f"The column selected for spliting is: {split}")
+        root.attr = split
 
-def mutualInfoSplitter(train_input):
-    input = pd.read_csv(train_input, sep='\t')
-    labels = input.iloc[:, input.shape[1] - 1]
-    input = input.drop(input.columns[input.shape[1] - 1], axis=1)
+        # The below code goes through all the values(V) of the best attribute
+        # and takes a subset of value = v, where v belongs to V
+        unique_values_feature = Counter(feature[split])
+        new_input = pd.concat([feature,label], axis=1)
+        
+        for x_val, y_val in unique_values_feature.items():
+            new_input = new_input[new_input[split] == x_val]
+
+            # Only valid for 2 label values for multiple values
+            # This must be changed to root children and must loop through
+            # the whole list to find the corresponding splitting node.
+
+            new_input = new_input.drop(split, axis=1)
+
+            new_label = new_input.iloc[:,new_input.shape[1] -1]
+            new_feature = new_input.drop(new_input.columns[new_input.shape[1] - 1], axis=1)
+
+            if x_val == 0:
+                root.left = tree_recurse(new_feature, new_label)
+
+            else:
+                root.right = tree_recurse(new_feature, new_label)
+
+        return root
+
+def mutualInfoSplitter(feature, label):
     list_mutual_info = []
 
-    for column in input.columns:
-        list_mutual_info.append(mutualInformation(labels, input[column].values, train_input))
+    for column in feature.columns:
+        list_mutual_info.append(mutualInformation(feature[column].values, label))
 
     print(list_mutual_info)
     i_y_x_index = -1
@@ -70,9 +99,15 @@ def mutualInfoSplitter(train_input):
        index_count += 1
 
     if i_y_x_index == -1:
-        return 'none'
+        return None
     else:
-        return input.columns[i_y_x_index]
+        # Use this to extract the corresponding values from the dataframe
+        unique_values_feature= Counter(feature[feature.columns[i_y_x_index]])
+        for x_val, y_val in unique_values_feature.items():
+            new_input= feature[feature[feature.columns[i_y_x_index]] == x_val]
+            print(new_input)
+
+        return feature.columns[i_y_x_index]
 
 
 
@@ -95,7 +130,7 @@ if __name__ == '__main__':
                         help='path of the output .txt file to which the printed tree should be written')
     args = parser.parse_args()
     '''
-split = mutualInfoSplitter('dataset/small_train.tsv')
-print(f"The column selected for spliting is: {split}")
+    train('dataset/heart_test.tsv')
+
 
 
